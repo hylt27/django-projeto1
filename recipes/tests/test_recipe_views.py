@@ -1,13 +1,12 @@
 # Testing the view functions
 
-from django.test import TestCase
 from django.urls import resolve, reverse
 from recipes import views
-from recipes.models import Category, Recipe
-from django.contrib.auth.models import User
+from .test_recipe_base import RecipeTestBase
 
 
-class RecipeViewsTest(TestCase):
+class RecipeViewsTest(RecipeTestBase): 
+
     def test_home_view_function(self):
         # tests if the home view function is correct
 
@@ -36,32 +35,32 @@ class RecipeViewsTest(TestCase):
             response.content.decode('utf-8'))
 
     def test_home_view_template_recipes(self):
-        # tests if the home view template loads the registered recipes
+        # tests if the home view template loads the recipes
 
-        category = Category.objects.create(name='Category_1')
-        author = User.objects.create_user(
-            first_name='John',
-            last_name='Sikes',
-            username='john_sikes',
-            password='12345',
-            email='johnsikes@gmail.com',
-        )
-        recipe = Recipe.objects.create(
-            title = 'Recipe title',
-            description = 'Recipe description',
-            slug = 'Recipe slug',
-            preparation_time = 10,
-            preparation_time_unit = 'minutes',
-            servings = 5,
-            servings_unit = 'portions',
-            preparation_steps = 'Preparation steps',
-            preparation_steps_is_html = False,
-            is_published = True,
-            category=category,
-            author=author,
-        )
-        ...
+        # first we need to create a recipe
+        self.make_recipe()
 
+        response = self.client.get(reverse('recipes:home'))
+        content = response.content.decode('utf-8')
+        context_recipes = response.context['recipes']
+
+        # now we test if the template loads some elements
+        self.assertIn('Recipe title', content)
+        self.assertEqual(len(context_recipes), 1)
+
+    def test_home_view_template_dont_show(self):
+        # tests if the home view template do not load the recipes when it
+        # is with is_published = False
+
+        # first we need to create a recipe
+        self.make_recipe(is_published=False)
+
+        response = self.client.get(reverse('recipes:home'))
+
+        # now we test if the template loads some elements
+        self.assertIn(
+            '<h1> No recipes found here :( </h1>',
+            response.content.decode('utf-8'))
 # --------------------------------------------------------------------------------------
 
     def test_category_view_function(self):
@@ -74,9 +73,34 @@ class RecipeViewsTest(TestCase):
         # tests if the recipe category view function returns
         # status code 404 when there is no recipes
 
-        response = self.client.get(reverse('recipes:category', kwargs={'category_id': 1000}))  # noqa: E501
+        response = self.client.get(reverse('recipes:category',
+                                     kwargs={'category_id': 1000}))  # noqa: E501
         self.assertEqual(response.status_code, 404)
 
+    def test_category_view_template_recipes(self):
+        # tests if the category view template loads the recipes
+
+        # first we need to create a recipe
+        self.make_recipe(title='This is a test')
+
+        response = self.client.get(reverse('recipes:category', args=(1,)))
+        content = response.content.decode('utf-8')
+
+        # now we test if the template loads some elements
+        self.assertIn('This is a test', content)
+
+    def test_category_view_template_dont_show(self):
+        # tests if the category view template do not load the recipes when it
+        # is with is_published = False
+
+        # first we need to create a recipe
+        recipe = self.make_recipe(is_published=False)
+
+        response = self.client.get(reverse('recipes:category',
+                                            kwargs={'category_id': recipe.category.id}))
+
+        # now we test if the template loads some elements
+        self.assertEqual(response.status_code, 404)
 # --------------------------------------------------------------------------------------
 
     def test_recipe_detail_view_function(self):
@@ -90,4 +114,29 @@ class RecipeViewsTest(TestCase):
         # status code 404 when there is no recipe
 
         response = self.client.get(reverse('recipes:details', kwargs={'id': 100}))  # noqa: E501
+        self.assertEqual(response.status_code, 404)
+
+    def test_recipe_detail_view_template(self):
+        # tests if the recipe detail view template loads the correct recipe
+
+        # first we need to create a recipe
+        self.make_recipe(title='Detail page of one recipe')
+
+        response = self.client.get(reverse('recipes:details', kwargs={'id': 1}))
+        content = response.content.decode('utf-8')
+
+        # now we test if the template loads some elements
+        self.assertIn('Detail page of one recipe', content)
+
+    def test_detail_view_template_dont_show(self):
+        # tests if the recipe detail view template do not load the recipe when it
+        # is with is_published = False
+
+        # first we need to create a recipe
+        recipe = self.make_recipe(is_published=False)
+
+        response = self.client.get(reverse('recipes:details',
+                                            kwargs={'id': recipe.id}))
+
+        # now we test if the template loads some elements
         self.assertEqual(response.status_code, 404)
