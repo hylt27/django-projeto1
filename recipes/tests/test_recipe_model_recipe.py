@@ -10,13 +10,13 @@ class RecipeTestModel(RecipeTestBase):
         return super().setUp()
 
     def make_a_recipe(self):
-        # make a recipe with
+        
         recipe = Recipe(
             category=self.make_category(name='new_category'),
             author=self.make_author(username='new_user'),
             title='Recipe title',
             description='Recipe description',
-            slug='recipe-slug',
+            slug='recipe-slug-for-no-defaults',
             preparation_time=10,
             preparation_time_unit='minutes',
             servings=5,

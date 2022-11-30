@@ -73,8 +73,14 @@ class RecipeViewsTest(RecipeTestBase):
         # tests if the recipe category view function returns
         # status code 404 when there is no recipes
 
-        response = self.client.get(reverse('recipes:category',
-                                     kwargs={'category_id': 1000}))  # noqa: E501
+        response = self.client.get(
+            reverse(
+                'recipes:category',
+                kwargs={
+                    'category_id': 1000
+                }
+            )
+        )
         self.assertEqual(response.status_code, 404)
 
     def test_category_view_template_recipes(self):
@@ -96,8 +102,14 @@ class RecipeViewsTest(RecipeTestBase):
         # first we need to create a recipe
         recipe = self.make_recipe(is_published=False)
 
-        response = self.client.get(reverse('recipes:category',
-                                            kwargs={'category_id': recipe.category.id}))
+        response = self.client.get(
+            reverse(
+                'recipes:category',
+                kwargs={
+                    'category_id': recipe.category.id
+                }
+            )
+        )
 
         # now we test if the template loads some elements
         self.assertEqual(response.status_code, 404)
@@ -113,7 +125,14 @@ class RecipeViewsTest(RecipeTestBase):
         # tests if the recipe details view function returns
         # status code 404 when there is no recipe
 
-        response = self.client.get(reverse('recipes:details', kwargs={'id': 100}))  # noqa: E501
+        response = self.client.get(
+            reverse(
+                'recipes:details',
+                kwargs={
+                    'id': 100
+                }
+            )
+        )
         self.assertEqual(response.status_code, 404)
 
     def test_recipe_detail_view_template(self):
@@ -122,21 +141,58 @@ class RecipeViewsTest(RecipeTestBase):
         # first we need to create a recipe
         self.make_recipe(title='Detail page of one recipe')
 
-        response = self.client.get(reverse('recipes:details', kwargs={'id': 1}))
+        response = self.client.get(
+            reverse(
+                'recipes:details',
+                kwargs={
+                    'id': 1
+                }
+            )
+        )
         content = response.content.decode('utf-8')
 
         # now we test if the template loads some elements
         self.assertIn('Detail page of one recipe', content)
 
     def test_detail_view_template_dont_show(self):
-        # tests if the recipe detail view template do not load the recipe when it
-        # is with is_published = False
+        # tests if the recipe detail view template do not load the recipe when
+        # it is with is_published = False
 
         # first we need to create a recipe
         recipe = self.make_recipe(is_published=False)
 
-        response = self.client.get(reverse('recipes:details',
-                                            kwargs={'id': recipe.id}))
+        response = self.client.get(
+            reverse(
+                'recipes:details',
+                kwargs={
+                    'id': recipe.id
+                }
+            )
+        )
 
         # now we test if the template loads some elements
+        self.assertEqual(response.status_code, 404)
+# --------------------------------------------------------------------------------------
+
+    def test_search_view_function(self):
+        # tests if the search input uses
+        # the correct view function
+
+        url = reverse('recipes:search')
+        resolved = resolve(url)
+        self.assertIs(resolved.func, views.search)
+    
+    def test_search_view_template(self):
+        # tests if the search input loads
+        # the correct template
+
+        response = self.client.get(reverse('recipes:search') + '?q=test')
+        self.assertTemplateUsed(response, 'recipes/pages/search.html')
+
+    def test_search_view_404_error(self):
+        # tests if the search input raises
+        # a 404 error if there is no search term
+
+        url = reverse('recipes:search')
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
