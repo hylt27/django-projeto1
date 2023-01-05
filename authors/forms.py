@@ -25,16 +25,23 @@ class RegisterForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        add_placeholder(self.fields['username'], 'Your username')
-        add_placeholder(self.fields['email'], 'Your e-mail')
+        add_placeholder(self.fields['username'], 'Type an username')
+        add_placeholder(self.fields['email'], 'Type your e-mail')
         add_placeholder(self.fields['first_name'], 'Ex.: John')
         add_placeholder(self.fields['last_name'], 'Ex.: Wheeler')
+        add_placeholder(self.fields['password'], 'Type a password')
+        add_placeholder(self.fields['password2'], 'Repeat your password')
 
+    first_name = forms.CharField(
+        required=True,
+        error_messages={
+            'required': 'Write your first name.'
+        },
+        label='First name',
+    )
     password = forms.CharField(
         required=True,
-        widget=forms.PasswordInput(attrs={
-            'placeholder': 'Your password'
-        }),
+        widget=forms.PasswordInput(),
         error_messages={
             'required': 'Password must not be empty.',
         },
@@ -43,13 +50,13 @@ class RegisterForm(forms.ModelForm):
             'contain an uppercase letter, a lowercase letter, and a number.'
         ),
         validators=[strong_password],
+        label='Password',
     )
 
     password2 = forms.CharField(
         required=False,
-        widget=forms.PasswordInput(attrs={
-            'placeholder': 'Repeat your password'
-        })
+        widget=forms.PasswordInput(),
+        label='Password2'
     )
 
     class Meta:
@@ -59,16 +66,13 @@ class RegisterForm(forms.ModelForm):
             'last_name',
             'username',
             'email',
-            'password',
         ]
-        # exclude = ['last_name','first_name']
 
         labels = {
             'username': 'Username',
             'first_name': 'First name',
             'last_name': 'Last name',
             'email': 'E-mail',
-            'password': 'Password',
         }
 
         help_texts = {
@@ -80,44 +84,6 @@ class RegisterForm(forms.ModelForm):
                 'required': 'This field must not be empty.',
             }
         }
-
-        widgets = {
-            'first_name': forms.TextInput(attrs={
-                'placeholder': 'Type your first name',
-                'class': 'input text-input other-class'
-            }),
-            'last_name': forms.TextInput(attrs={
-                'placeholder': 'Type your last name',
-                'class': 'input text-input other-class'
-            }),
-            'password': forms.PasswordInput(attrs={
-                'placeholder': 'Type your password',
-            })
-        }
-
-    def clean_password(self):
-        data = self.cleaned_data.get('password')
-
-        if 'attention' in data:
-            raise ValidationError(
-                'Do not write %(value)s in the password field.',
-                code='invalid',
-                params={'value': '"attention"'}
-            )
-
-        return data
-
-    def clean_first_name(self):
-        data = self.cleaned_data.get('first_name')
-
-        if 'Henrique' in data:
-            raise ValidationError(
-                'Do not write %(value)s in the first name field.',
-                code='invalid',
-                params={'value': '"Henrique"'}
-            )
-
-        return data
 
     def clean(self):
         cleaned_data = super().clean()
