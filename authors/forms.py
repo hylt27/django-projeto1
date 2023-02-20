@@ -32,15 +32,42 @@ class RegisterForm(forms.ModelForm):
         add_placeholder(self.fields['password'], 'Type a password')
         add_placeholder(self.fields['password2'], 'Repeat your password')
 
+    username = forms.CharField(
+        label='Username',
+        help_text='Length must have at least 6 characters. Letters, digits and @/./+/-/_ only.',
+        error_messages={
+            'required': 'This field must not be empty.',
+            'min_length': 'Username must be at least 6 characters long',
+            'max_length': 'Username can be up to 20 characters long.',
+        },
+        min_length=6,
+        max_length=20
+    )
+
     first_name = forms.CharField(
-        required=True,
         error_messages={
             'required': 'Write your first name.'
         },
         label='First name',
     )
+
+    last_name = forms.CharField(
+        error_messages={
+            'required': 'Write your last name.'
+        },
+        label='Last name',
+    )
+
+    email = forms.EmailField(
+        error_messages={
+            'required': 'E-mail is required.'
+        },
+        label='E-mail',
+        help_text='Type a valid e-mail address.',
+
+    )
+
     password = forms.CharField(
-        required=True,
         widget=forms.PasswordInput(),
         error_messages={
             'required': 'Password must not be empty.',
@@ -51,11 +78,14 @@ class RegisterForm(forms.ModelForm):
         ),
         validators=[strong_password],
         label='Password',
+
     )
 
     password2 = forms.CharField(
-        required=False,
         widget=forms.PasswordInput(),
+        error_messages={
+            'required': 'Please, repeat your password.',
+        },
         label='Password2'
     )
 
@@ -66,24 +96,17 @@ class RegisterForm(forms.ModelForm):
             'last_name',
             'username',
             'email',
+            'password',
         ]
 
-        labels = {
-            'username': 'Username',
-            'first_name': 'First name',
-            'last_name': 'Last name',
-            'email': 'E-mail',
-        }
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '')
+        exists = User.objects.filter(email=email).exists()
 
-        help_texts = {
-            'email': 'Type a valid e-mail address.'
-        }
+        if exists:
+            raise ValidationError('The e-mail is already being used', code='invalid')
 
-        error_messages = {
-            'username': {
-                'required': 'This field must not be empty.',
-            }
-        }
+        return email
 
     def clean(self):
         cleaned_data = super().clean()
