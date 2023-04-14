@@ -17,7 +17,7 @@ class RecipeCategoryViewTest(RecipeTestBase):
             reverse(
                 'recipes:category',
                 kwargs={
-                    'category_id': 1000
+                    'category_id': 100
                 }
             )
         )
